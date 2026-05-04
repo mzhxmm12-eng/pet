@@ -1,0 +1,97 @@
+{
+  "formatVersion": 1,
+  "petId": "orange_cat_builtin",
+  "name": "Mimi",
+  "species": "cat",
+  "style": "pixel_cute",
+  "author": "DeskPet",
+  "canvas": {
+    "width": 64,
+    "height": 64,
+    "scale": 2
+  },
+  "hitArea": {
+    "x": 6,
+    "y": 4,
+    "width": 52,
+    "height": 58
+  },
+  "anchor": {
+    "x": 32,
+    "y": 60
+  },
+  "animations": {
+    "idle": {
+      "file": "sprites/idle.png",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "frames": 4,
+      "fps": 4,
+      "loop": true
+    },
+    "walk_left": {
+      "file": "sprites/walk_left.png",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "frames": 6,
+      "fps": 8,
+      "loop": true
+    },
+    "walk_right": {
+      "file": "sprites/walk_right.png",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "frames": 6,
+      "fps": 8,
+      "loop": true
+    },
+    "sleep": {
+      "file": "sprites/sleep.png",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "frames": 4,
+      "fps": 3,
+      "loop": true
+    },
+    "alert": {
+      "file": "sprites/alert.png",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "frames": 3,
+      "fps": 5,
+      "loop": false
+    },
+    "play": {
+      "file": "sprites/play.png",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "frames": 6,
+      "fps": 10,
+      "loop": false
+    },
+    "eat": {
+      "file": "sprites/eat.png",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "frames": 6,
+      "fps": 8,
+      "loop": false
+    },
+    "reject": {
+      "file": "sprites/reject.png",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "frames": 3,
+      "fps": 5,
+      "loop": false
+    },
+    "dragged": {
+      "file": "sprites/dragged.png",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "frames": 2,
+      "fps": 4,
+      "loop": true
+    }
+  }
+}

@@ -1,0 +1,34 @@
+# Build outputs
+bin/
+obj/
+**/bin/
+**/obj/
+
+# Local/runtime data
+tmp/
+*.user
+*.suo
+.vs/
+
+# Nested web generator repo is published separately.
+web/
+
+# Node/Next artifacts, kept as guard rails if web is later moved into this repo.
+node_modules/
+.next/
+out/
+coverage/
+.env
+.env.*
+!.env.example
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*

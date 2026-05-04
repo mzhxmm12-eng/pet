@@ -1,0 +1,13 @@
+分类,素材名称,文件路径,格式,单帧尺寸,帧数,FPS,是否循环,是否必需,用途说明,制作备注
+基础信息,宠物预览图,assets/pets/orange-cat/preview.png,PNG,64x64,1,0,否,是,宠物管理和设置页展示,透明背景或简洁纯色背景均可
+基础信息,资产配置文件,assets/pets/orange-cat/manifest.json,JSON,-,-,-,-,是,描述宠物基础信息和动作播放参数,必须与实际 Sprite Sheet 尺寸和帧数一致
+动作,idle 待机,assets/pets/orange-cat/sprites/idle.png,PNG Sprite Sheet,64x64,4,4,是,是,默认待机动作,眨眼、呼吸、尾巴轻微摆动
+动作,walk_right 向右走,assets/pets/orange-cat/sprites/walk_right.png,PNG Sprite Sheet,64x64,6,8,是,是,宠物向右随机走动,角色默认朝右，落脚点要稳定
+动作,walk_left 向左走,assets/pets/orange-cat/sprites/walk_left.png,PNG Sprite Sheet,64x64,6,8,是,是,宠物向左随机走动,可由 walk_right 水平翻转生成
+动作,sleep 睡觉,assets/pets/orange-cat/sprites/sleep.png,PNG Sprite Sheet,64x64,4,3,是,是,长时间无操作后睡觉,趴下或蜷缩，表现呼吸起伏
+动作,alert 警觉,assets/pets/orange-cat/sprites/alert.png,PNG Sprite Sheet,64x64,3,5,否,是,光标靠近时抬头或看向光标,动作要短，方便频繁触发
+动作,play 玩耍,assets/pets/orange-cat/sprites/play.png,PNG Sprite Sheet,64x64,6,10,否,是,点击宠物或光标快速经过时扑一下,可表现伸爪、前扑、尾巴上扬
+动作,eat 吃东西,assets/pets/orange-cat/sprites/eat.png,PNG Sprite Sheet,64x64,6,8,否,是,文件投喂成功后播放,表现吃猫粮或咀嚼反馈
+动作,reject 拒绝,assets/pets/orange-cat/sprites/reject.png,PNG Sprite Sheet,64x64,3,5,否,是,投喂失败或文件不可投喂时播放,可表现摇头、疑惑或后退
+可选动作,dragged 被拖拽,assets/pets/orange-cat/sprites/dragged.png,PNG Sprite Sheet,64x64,2,4,是,否,用户拖动宠物本体时播放,没有该素材时可暂停当前帧代替
+可选动作,feed_ready 可投喂,assets/pets/orange-cat/sprites/feed_ready.png,PNG Sprite Sheet,64x64,2,4,是,否,文件拖到宠物身上且允许投喂时播放,没有该素材时可复用 alert
