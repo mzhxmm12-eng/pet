@@ -64,8 +64,8 @@ public partial class ControlPanelWindow : Window
     {
         var image = new Image
         {
-            Width = 64,
-            Height = 64,
+            Width = 52,
+            Height = 52,
             Source = LoadImage(pet.PreviewPath)
         };
         RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.NearestNeighbor);
@@ -85,9 +85,9 @@ public partial class ControlPanelWindow : Window
         var card = new Border
         {
             Width = 192,
-            Height = 90,
-            Padding = new Thickness(12),
-            Margin = new Thickness(0, 0, 10, 10),
+            Height = 74,
+            Padding = new Thickness(10),
+            Margin = new Thickness(0, 0, 10, 8),
             CornerRadius = new CornerRadius(8),
             BorderThickness = new Thickness(1),
             BorderBrush = Brushes.Transparent,
@@ -110,9 +110,9 @@ public partial class ControlPanelWindow : Window
         return new Border
         {
             Width = 192,
-            Height = 90,
-            Padding = new Thickness(12),
-            Margin = new Thickness(0, 0, 10, 10),
+            Height = 74,
+            Padding = new Thickness(10),
+            Margin = new Thickness(0, 0, 10, 8),
             CornerRadius = new CornerRadius(8),
             BorderThickness = new Thickness(1),
             BorderBrush = new SolidColorBrush(Color.FromRgb(220, 214, 207)),

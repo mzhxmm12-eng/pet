@@ -149,7 +149,7 @@ public partial class MainWindow : Window
     {
         var icon = new NotifyIcon
         {
-            Icon = System.Drawing.SystemIcons.Application,
+            Icon = LoadTrayIcon(),
             Text = "DeskPet",
             Visible = true,
             ContextMenuStrip = new ContextMenuStrip()
@@ -164,6 +164,27 @@ public partial class MainWindow : Window
         icon.ContextMenuStrip.Items.Add("退出", null, (_, _) => Dispatcher.Invoke(ExitApp));
         icon.DoubleClick += (_, _) => Dispatcher.Invoke(ToggleVisibility);
         return icon;
+    }
+
+    private static System.Drawing.Icon LoadTrayIcon()
+    {
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+        if (File.Exists(iconPath))
+        {
+            return new System.Drawing.Icon(iconPath);
+        }
+
+        var processPath = Environment.ProcessPath;
+        if (!string.IsNullOrWhiteSpace(processPath))
+        {
+            var associatedIcon = System.Drawing.Icon.ExtractAssociatedIcon(processPath);
+            if (associatedIcon is not null)
+            {
+                return associatedIcon;
+            }
+        }
+
+        return System.Drawing.SystemIcons.Application;
     }
 
     private static MenuItem CreateWpfMenuItem(string header, RoutedEventHandler click)

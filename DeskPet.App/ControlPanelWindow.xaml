@@ -2,10 +2,11 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="桌面宠物控制面板"
+        Icon="Assets/AppIcon.ico"
         Width="900"
-        Height="620"
+        Height="700"
         MinWidth="760"
-        MinHeight="520"
+        MinHeight="620"
         WindowStartupLocation="CenterOwner"
         Background="#FFFCF7F0">
     <Grid>
@@ -32,27 +33,31 @@
 
         <TabControl Grid.Row="1" Background="#FFFCF7F0" BorderThickness="0">
             <TabItem Header="猫窝">
-                <Grid>
+                <Grid Margin="0,0,0,8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="170" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="220" />
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="26,22,26,18">
-                        <TextBlock Margin="0,0,0,12" Foreground="#666" Text="选择猫咪" />
-                        <WrapPanel x:Name="CatCardsPanel" />
+                    <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="26,18,26,14">
+                        <TextBlock Margin="0,0,0,10" Foreground="#666" Text="选择猫咪" />
+                        <ScrollViewer MaxHeight="172"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <WrapPanel x:Name="CatCardsPanel" />
+                        </ScrollViewer>
                     </StackPanel>
 
                     <Border Grid.Row="1"
                             Grid.ColumnSpan="2"
                             BorderBrush="#E5D8C8"
                             BorderThickness="0,1,0,1"
-                            Padding="26,20">
+                            Padding="26,16">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -65,7 +70,7 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,18" FontWeight="SemiBold" Foreground="#555" Text="外观与行为" />
+                            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,14" FontWeight="SemiBold" Foreground="#555" Text="外观与行为" />
 
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="宠物大小" FontWeight="SemiBold" />
                             <TextBlock x:Name="ScaleValueText" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" Margin="0,0,22,0" FontWeight="SemiBold" />
@@ -91,7 +96,7 @@
                                     IsSnapToTickEnabled="True"
                                     ValueChanged="OnMoveSpeedChanged" />
 
-                            <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,22,0,0">
+                            <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,18,0,0">
                                 <WrapPanel>
                                     <TextBlock VerticalAlignment="Center" Margin="0,0,12,0" Text="互动频率" FontWeight="SemiBold" />
                                     <ComboBox x:Name="InteractionBox" Width="110">
@@ -109,15 +114,15 @@
 
                     <Border Grid.Row="2"
                             Grid.Column="0"
-                            Margin="26,22,20,26"
+                            Margin="26,16,20,16"
                             BorderBrush="#CDBFAE"
                             BorderThickness="1"
                             CornerRadius="8"
                             Background="#FFFDFBF7">
                         <Grid>
                             <Image x:Name="PreviewImage"
-                                   Width="128"
-                                   Height="128"
+                                   Width="112"
+                                   Height="112"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
                                    RenderOptions.BitmapScalingMode="NearestNeighbor" />
@@ -129,14 +134,14 @@
                         </Grid>
                     </Border>
 
-                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,22,26,26">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,16,26,16">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                             <Ellipse Width="10" Height="10" Fill="#31C76A" Margin="0,0,8,0" />
                             <TextBlock x:Name="StatusText" VerticalAlignment="Center" Text="宠物运行中" />
                         </StackPanel>
-                        <Button Height="46" Margin="0,0,0,10" Content="重置位置" Click="OnResetClick" />
-                        <Button Height="46" Margin="0,0,0,10" Content="应用设置" Click="OnApplyClick" />
-                        <Button x:Name="PauseButton" Height="46" Content="暂停/继续" Click="OnPauseClick" />
+                        <Button Height="40" Margin="0,0,0,8" Content="重置位置" Click="OnResetClick" />
+                        <Button Height="40" Margin="0,0,0,8" Content="确认更换宠物" Click="OnApplyClick" />
+                        <Button x:Name="PauseButton" Height="40" Content="暂停/继续" Click="OnPauseClick" />
                     </StackPanel>
                 </Grid>
             </TabItem>
