@@ -24,16 +24,21 @@ public sealed class SettingsStore
 
         try
         {
-            return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(_settingsPath)) ?? new AppSettings();
+            var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(_settingsPath)) ?? new AppSettings();
+            settings.EnsureMigrated();
+            return settings;
         }
         catch
         {
-            return new AppSettings();
+            var settings = new AppSettings();
+            settings.EnsureMigrated();
+            return settings;
         }
     }
 
     public void Save(AppSettings settings)
     {
+        settings.EnsureMigrated();
         var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(_settingsPath, json);
     }

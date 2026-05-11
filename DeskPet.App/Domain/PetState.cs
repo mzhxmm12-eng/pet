@@ -6,8 +6,8 @@ public enum PetState
     WalkLeft,
     WalkRight,
     Sleep,
-    Alert,
     Play,
+    PlayLeft,
     Eat,
     Reject,
     Dragged

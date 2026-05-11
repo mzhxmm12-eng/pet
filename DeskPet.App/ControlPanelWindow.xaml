@@ -1,0 +1,154 @@
+<Window x:Class="DeskPet.App.ControlPanelWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="桌面宠物控制面板"
+        Width="900"
+        Height="620"
+        MinWidth="760"
+        MinHeight="520"
+        WindowStartupLocation="CenterOwner"
+        Background="#FFFCF7F0">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" BorderBrush="#E5D8C8" BorderThickness="0,0,0,1" Background="#FFFCF7F0">
+            <Grid Margin="24,0">
+                <TextBlock HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontSize="17"
+                           FontWeight="SemiBold"
+                           Text="桌面宠物控制面板" />
+                <Button Width="36"
+                        Height="32"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Content="..."
+                        ToolTip="更多功能预留" />
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1" Background="#FFFCF7F0" BorderThickness="0">
+            <TabItem Header="猫窝">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="220" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="26,22,26,18">
+                        <TextBlock Margin="0,0,0,12" Foreground="#666" Text="选择猫咪" />
+                        <WrapPanel x:Name="CatCardsPanel" />
+                    </StackPanel>
+
+                    <Border Grid.Row="1"
+                            Grid.ColumnSpan="2"
+                            BorderBrush="#E5D8C8"
+                            BorderThickness="0,1,0,1"
+                            Padding="26,20">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,18" FontWeight="SemiBold" Foreground="#555" Text="外观与行为" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="宠物大小" FontWeight="SemiBold" />
+                            <TextBlock x:Name="ScaleValueText" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" Margin="0,0,22,0" FontWeight="SemiBold" />
+                            <Slider x:Name="ScaleSlider"
+                                    Grid.Row="2"
+                                    Grid.Column="0"
+                                    Margin="0,8,22,0"
+                                    Minimum="1"
+                                    Maximum="3"
+                                    TickFrequency="0.5"
+                                    IsSnapToTickEnabled="True"
+                                    ValueChanged="OnScaleChanged" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="移动速度" FontWeight="SemiBold" />
+                            <TextBlock x:Name="MoveSpeedValueText" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" FontWeight="SemiBold" />
+                            <Slider x:Name="MoveSpeedSlider"
+                                    Grid.Row="2"
+                                    Grid.Column="1"
+                                    Margin="0,8,0,0"
+                                    Minimum="0.75"
+                                    Maximum="1.35"
+                                    TickFrequency="0.3"
+                                    IsSnapToTickEnabled="True"
+                                    ValueChanged="OnMoveSpeedChanged" />
+
+                            <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,22,0,0">
+                                <WrapPanel>
+                                    <TextBlock VerticalAlignment="Center" Margin="0,0,12,0" Text="互动频率" FontWeight="SemiBold" />
+                                    <ComboBox x:Name="InteractionBox" Width="110">
+                                        <ComboBoxItem Content="低" Tag="low" />
+                                        <ComboBoxItem Content="中" Tag="medium" />
+                                        <ComboBoxItem Content="高" Tag="high" />
+                                    </ComboBox>
+                                    <CheckBox x:Name="ClickThroughBox" Margin="28,0,0,0" Content="点击穿透" />
+                                    <CheckBox x:Name="FeedingBox" Margin="22,0,0,0" Content="文件投喂" />
+                                    <CheckBox x:Name="ConfirmBox" Margin="22,0,0,0" Content="投喂前确认" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="2"
+                            Grid.Column="0"
+                            Margin="26,22,20,26"
+                            BorderBrush="#CDBFAE"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Background="#FFFDFBF7">
+                        <Grid>
+                            <Image x:Name="PreviewImage"
+                                   Width="128"
+                                   Height="128"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                            <TextBlock HorizontalAlignment="Right"
+                                       VerticalAlignment="Bottom"
+                                       Margin="0,0,18,14"
+                                       Foreground="#888"
+                                       Text="预览" />
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,22,26,26">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                            <Ellipse Width="10" Height="10" Fill="#31C76A" Margin="0,0,8,0" />
+                            <TextBlock x:Name="StatusText" VerticalAlignment="Center" Text="宠物运行中" />
+                        </StackPanel>
+                        <Button Height="46" Margin="0,0,0,10" Content="重置位置" Click="OnResetClick" />
+                        <Button Height="46" Margin="0,0,0,10" Content="应用设置" Click="OnApplyClick" />
+                        <Button x:Name="PauseButton" Height="46" Content="暂停/继续" Click="OnPauseClick" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="狗窝 即将上线">
+                <Grid Background="#FFFCF7F0">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock HorizontalAlignment="Center" FontSize="28" Text="狗窝" />
+                        <TextBlock Margin="0,14,0,0" Foreground="#666" Text="狗狗宠物即将上线" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

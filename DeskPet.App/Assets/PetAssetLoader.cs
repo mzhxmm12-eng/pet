@@ -13,10 +13,11 @@ public sealed class PetAssetLoader
         "walk_left",
         "walk_right",
         "sleep",
-        "alert",
         "play",
+        "play_left",
         "eat",
-        "reject"
+        "reject",
+        "dragged"
     ];
 
     public PetAsset Load(string rootDirectory)
@@ -64,6 +65,33 @@ public sealed class PetAssetLoader
             throw new InvalidOperationException("Canvas width, height, and scale must be positive.");
         }
 
+        if (manifest.HitArea.Width <= 0 || manifest.HitArea.Height <= 0)
+        {
+            throw new InvalidOperationException("Hit area width and height must be positive.");
+        }
+
+        if (manifest.Anchor.X < 0 || manifest.Anchor.Y < 0)
+        {
+            throw new InvalidOperationException("Anchor coordinates must not be negative.");
+        }
+
+        if (string.IsNullOrWhiteSpace(manifest.PetId))
+        {
+            throw new InvalidOperationException("Pet id is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(manifest.Species))
+        {
+            throw new InvalidOperationException("Pet species is required.");
+        }
+
+        var previewPath = Path.GetFullPath(Path.Combine(rootDirectory, manifest.Preview.Replace('/', Path.DirectorySeparatorChar)));
+        var rootPath = Path.GetFullPath(rootDirectory);
+        if (!previewPath.StartsWith(rootPath, StringComparison.OrdinalIgnoreCase) || !File.Exists(previewPath))
+        {
+            throw new FileNotFoundException("Pet preview image was not found.", previewPath);
+        }
+
         foreach (var required in RequiredAnimations)
         {
             if (!manifest.Animations.ContainsKey(required))
@@ -80,7 +108,6 @@ public sealed class PetAssetLoader
             }
 
             var filePath = Path.GetFullPath(Path.Combine(rootDirectory, definition.File.Replace('/', Path.DirectorySeparatorChar)));
-            var rootPath = Path.GetFullPath(rootDirectory);
             if (!filePath.StartsWith(rootPath, StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException($"Animation '{name}' points outside the pet directory.");

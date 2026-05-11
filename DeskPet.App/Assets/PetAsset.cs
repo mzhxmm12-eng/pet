@@ -1,4 +1,5 @@
 using DeskPet.App.Domain;
+using System.IO;
 using System.Windows.Media.Imaging;
 
 namespace DeskPet.App.Assets;
@@ -17,6 +18,8 @@ public sealed class PetAsset
     public PetManifest Manifest { get; }
 
     public IReadOnlyDictionary<string, SpriteAnimation> Animations { get; }
+
+    public string PreviewPath => Path.Combine(RootDirectory, Manifest.Preview.Replace('/', Path.DirectorySeparatorChar));
 }
 
 public sealed class SpriteAnimation

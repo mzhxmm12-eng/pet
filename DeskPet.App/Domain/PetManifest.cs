@@ -19,8 +19,17 @@ public sealed class PetManifest
     [JsonPropertyName("style")]
     public string Style { get; init; } = string.Empty;
 
+    [JsonPropertyName("preview")]
+    public string Preview { get; init; } = "preview.png";
+
     [JsonPropertyName("canvas")]
     public PetCanvas Canvas { get; init; } = new();
+
+    [JsonPropertyName("hitArea")]
+    public PetHitArea HitArea { get; init; } = new();
+
+    [JsonPropertyName("anchor")]
+    public PetAnchor Anchor { get; init; } = new();
 
     [JsonPropertyName("animations")]
     public Dictionary<string, AnimationDefinition> Animations { get; init; } = new(StringComparer.OrdinalIgnoreCase);
@@ -36,6 +45,30 @@ public sealed class PetCanvas
 
     [JsonPropertyName("scale")]
     public double Scale { get; init; } = 2;
+}
+
+public sealed class PetHitArea
+{
+    [JsonPropertyName("x")]
+    public int X { get; init; }
+
+    [JsonPropertyName("y")]
+    public int Y { get; init; }
+
+    [JsonPropertyName("width")]
+    public int Width { get; init; }
+
+    [JsonPropertyName("height")]
+    public int Height { get; init; }
+}
+
+public sealed class PetAnchor
+{
+    [JsonPropertyName("x")]
+    public int X { get; init; }
+
+    [JsonPropertyName("y")]
+    public int Y { get; init; }
 }
 
 public sealed class AnimationDefinition

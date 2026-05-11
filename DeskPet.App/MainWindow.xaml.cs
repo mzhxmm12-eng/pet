@@ -20,13 +20,16 @@ namespace DeskPet.App;
 public partial class MainWindow : Window
 {
     private readonly SettingsStore _settingsStore = new();
+    private readonly PetCatalogService _catalogService = new();
     private readonly DispatcherTimer _animationTimer = new();
     private readonly DispatcherTimer _behaviorTimer = new();
     private readonly Random _random = new();
-    private readonly PetAsset _petAsset;
-    private readonly FileFeedService _fileFeedService;
     private readonly NotifyIcon _trayIcon;
     private AppSettings _settings;
+    private PetCatalog _catalog;
+    private PetAsset _petAsset;
+    private FileFeedService _fileFeedService;
+    private ControlPanelWindow? _controlPanelWindow;
     private SpriteAnimation? _currentAnimation;
     private PetState _state = PetState.Idle;
     private int _frameIndex;
@@ -41,15 +44,20 @@ public partial class MainWindow : Window
     private DateTime _nextAutoDecision = DateTime.UtcNow;
     private DateTime _forcedUntil = DateTime.MinValue;
     private Point _lastCursor;
-    private DateTime _lastCursorSample = DateTime.UtcNow;
+    private DateTime _lastCursorSample = DateTime.MinValue;
     private DateTime _lastPlayTrigger = DateTime.MinValue;
+    private DateTime _playGestureStartedAt = DateTime.MinValue;
+    private double _playGestureHorizontalDelta;
+    private double _playGestureTotalDelta;
+    private bool _wasCursorInPlayArea;
 
     public MainWindow()
     {
         InitializeComponent();
 
         _settings = _settingsStore.Load();
-        _petAsset = new PetAssetLoader().Load(ResolvePetAssetDirectory());
+        _catalog = _catalogService.LoadCatalog();
+        _petAsset = ResolveActivePet();
         _fileFeedService = new FileFeedService(AppContext.BaseDirectory, _petAsset.RootDirectory);
         _trayIcon = CreateTrayIcon();
 
@@ -72,34 +80,35 @@ public partial class MainWindow : Window
         _trayIcon.Dispose();
     }
 
-    private static string ResolvePetAssetDirectory()
+    private PetAsset ResolveActivePet()
     {
-        var candidates = new[]
+        var active = _catalog.Find(_settings.ActivePetId);
+        if (active is not null)
         {
-            Path.Combine(AppContext.BaseDirectory, "assets", "pets", "orange-cat"),
-            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "assets", "pets", "orange-cat")),
-            Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "assets", "pets", "orange-cat"))
-        };
-
-        foreach (var candidate in candidates)
-        {
-            if (File.Exists(Path.Combine(candidate, "manifest.json")))
-            {
-                return candidate;
-            }
+            return active;
         }
 
-        throw new DirectoryNotFoundException("Could not locate assets/pets/orange-cat.");
+        var fallback = _catalog.Cats.FirstOrDefault() ?? _catalog.Pets.FirstOrDefault();
+        if (fallback is not null)
+        {
+            _settings.ActivePetId = fallback.Manifest.PetId;
+            _settingsStore.Save(_settings);
+            return fallback;
+        }
+
+        throw new DirectoryNotFoundException("No valid pet assets were found under assets/pets.");
     }
 
     private void ConfigureWindow()
     {
-        Width = _petAsset.Manifest.Canvas.Width * _settings.Scale;
-        Height = _petAsset.Manifest.Canvas.Height * _settings.Scale;
+        ApplyPetWindowSize();
 
         var workArea = SystemParameters.WorkArea;
-        Left = _settings.Left is > 0 ? Math.Min(_settings.Left.Value, workArea.Right - Width) : workArea.Right - Width - 80;
-        Top = _settings.Top is > 0 ? Math.Min(_settings.Top.Value, workArea.Bottom - Height) : workArea.Bottom - Height - 80;
+        var petSettings = _settings.ActivePet();
+        Left = petSettings.Left is > 0 ? Math.Min(petSettings.Left.Value, workArea.Right - Width) : workArea.Right - Width - 80;
+        Top = petSettings.Top is > 0 ? Math.Min(petSettings.Top.Value, workArea.Bottom - Height) : workArea.Bottom - Height - 80;
+        Opacity = petSettings.Opacity;
+        Topmost = _settings.IsTopmost;
     }
 
     private void ConfigureTimers()
@@ -113,11 +122,12 @@ public partial class MainWindow : Window
     private void ConfigureMenus()
     {
         var menu = new ContextMenu();
+        menu.Items.Add(CreateWpfMenuItem("打开控制面板", (_, _) => OpenControlPanel()));
         menu.Items.Add(CreateWpfMenuItem("隐藏", (_, _) => HidePet()));
         menu.Items.Add(CreateWpfMenuItem("暂停/继续", (_, _) => TogglePaused()));
         menu.Items.Add(CreateWpfMenuItem("点击穿透", (_, _) => ToggleClickThrough()));
         menu.Items.Add(CreateWpfMenuItem("文件投喂", (_, _) => ToggleFeeding()));
-        menu.Items.Add(CreateWpfMenuItem("设置", (_, _) => OpenSettings()));
+        menu.Items.Add(CreateWpfMenuItem("设置", (_, _) => OpenControlPanel()));
         menu.Items.Add(CreateWpfMenuItem("重置位置", (_, _) => ResetPosition()));
         menu.Items.Add(CreateWpfMenuItem("退出", (_, _) => ExitApp()));
         ContextMenu = menu;
@@ -145,10 +155,11 @@ public partial class MainWindow : Window
             ContextMenuStrip = new ContextMenuStrip()
         };
         icon.ContextMenuStrip.Items.Add("显示/隐藏", null, (_, _) => Dispatcher.Invoke(ToggleVisibility));
+        icon.ContextMenuStrip.Items.Add("打开控制面板", null, (_, _) => Dispatcher.Invoke(OpenControlPanel));
         icon.ContextMenuStrip.Items.Add("暂停/继续", null, (_, _) => Dispatcher.Invoke(TogglePaused));
         icon.ContextMenuStrip.Items.Add("点击穿透", null, (_, _) => Dispatcher.Invoke(ToggleClickThrough));
         icon.ContextMenuStrip.Items.Add("文件投喂", null, (_, _) => Dispatcher.Invoke(ToggleFeeding));
-        icon.ContextMenuStrip.Items.Add("设置", null, (_, _) => Dispatcher.Invoke(OpenSettings));
+        icon.ContextMenuStrip.Items.Add("设置", null, (_, _) => Dispatcher.Invoke(OpenControlPanel));
         icon.ContextMenuStrip.Items.Add("重置位置", null, (_, _) => Dispatcher.Invoke(ResetPosition));
         icon.ContextMenuStrip.Items.Add("退出", null, (_, _) => Dispatcher.Invoke(ExitApp));
         icon.DoubleClick += (_, _) => Dispatcher.Invoke(ToggleVisibility);
@@ -174,7 +185,7 @@ public partial class MainWindow : Window
         _currentAnimation = animation;
         _frameIndex = 0;
         ApplyFrame();
-        var speed = Math.Max(0.25, _settings.AnimationSpeed);
+        var speed = Math.Max(0.25, _settings.ActivePet().AnimationSpeed);
         _animationTimer.Interval = TimeSpan.FromMilliseconds(1000.0 / Math.Max(1, animation.Definition.Fps) / speed);
         _animationTimer.Start();
 
@@ -189,8 +200,8 @@ public partial class MainWindow : Window
         PetState.WalkLeft => "walk_left",
         PetState.WalkRight => "walk_right",
         PetState.Sleep => "sleep",
-        PetState.Alert => "alert",
         PetState.Play => "play",
+        PetState.PlayLeft => "play_left",
         PetState.Eat => "eat",
         PetState.Reject => "reject",
         PetState.Dragged => "dragged",
@@ -251,6 +262,7 @@ public partial class MainWindow : Window
 
         if (DateTime.UtcNow < _forcedUntil)
         {
+            SampleCursorPosition();
             return;
         }
 
@@ -267,11 +279,11 @@ public partial class MainWindow : Window
         if (_walkRemaining <= 0)
         {
             PlayState(PetState.Idle);
-            _nextAutoDecision = DateTime.UtcNow + TimeSpan.FromSeconds(_random.Next(4, 9));
+            _nextAutoDecision = DateTime.UtcNow + TimeSpan.FromSeconds(_random.Next(2, 6));
             return;
         }
 
-        var step = 2.0 * _settings.Scale;
+        var step = 2.0 * _settings.ActivePet().Scale * _settings.ActivePet().MoveSpeed;
         var workArea = SystemParameters.WorkArea;
         var nextLeft = Left + step * _walkDirection;
         if (nextLeft < workArea.Left || nextLeft + Width > workArea.Right)
@@ -286,47 +298,145 @@ public partial class MainWindow : Window
 
     private void HandleCursorInteraction()
     {
-        var cursor = PointToScreen(Mouse.GetPosition(this));
-        var center = new Point(Left + Width / 2, Top + Height / 2);
-        var distance = Distance(cursor, center);
-        var now = DateTime.UtcNow;
-        var elapsedMs = Math.Max(1, (now - _lastCursorSample).TotalMilliseconds);
-        var speed = Distance(cursor, _lastCursor) / elapsedMs;
-        _lastCursor = cursor;
-        _lastCursorSample = now;
-
-        if (distance < 250 && speed > 0.9 && now - _lastPlayTrigger > TimeSpan.FromSeconds(2))
+        var cursor = CursorTracker.GetScreenPosition();
+        if (double.IsNaN(cursor.X) || double.IsNaN(cursor.Y))
         {
-            _lastPlayTrigger = now;
-            PlayState(PetState.Play, TimeSpan.FromMilliseconds(900));
             return;
         }
 
-        if (distance < 160 && _state != PetState.Alert)
+        var now = DateTime.UtcNow;
+        var hasPreviousSample = _lastCursorSample != DateTime.MinValue;
+        var elapsedMs = hasPreviousSample ? Math.Max(1, (now - _lastCursorSample).TotalMilliseconds) : 100;
+        var previousCursor = _lastCursor;
+        var cursorDelta = hasPreviousSample ? Distance(cursor, _lastCursor) : 0;
+        _lastCursor = cursor;
+        _lastCursorSample = now;
+
+        var center = PointToScreen(new Point(Width / 2, Height / 2));
+        if (!IsCursorInPlayArea(cursor))
         {
-            PlayState(PetState.Alert, TimeSpan.FromMilliseconds(700));
+            ResetPlayGesture();
+            _wasCursorInPlayArea = false;
+            return;
         }
+
+        if (!_wasCursorInPlayArea || !hasPreviousSample || elapsedMs > 350)
+        {
+            _wasCursorInPlayArea = true;
+            ResetPlayGesture();
+            return;
+        }
+
+        if (_playGestureStartedAt == DateTime.MinValue)
+        {
+            _playGestureStartedAt = now;
+        }
+        else if (now - _playGestureStartedAt > TimeSpan.FromMilliseconds(900))
+        {
+            ResetPlayGesture();
+            _playGestureStartedAt = now;
+        }
+
+        _playGestureHorizontalDelta += cursor.X - previousCursor.X;
+        _playGestureTotalDelta += cursorDelta;
+
+        var profile = CurrentInteractionProfile();
+        var canPlay = now - _lastPlayTrigger > TimeSpan.FromMilliseconds(profile.CooldownMs);
+        var hasEnoughMotion = _playGestureTotalDelta >= profile.TotalMotionThreshold ||
+                              Math.Abs(_playGestureHorizontalDelta) >= profile.HorizontalMotionThreshold;
+        if (hasEnoughMotion && canPlay)
+        {
+            _lastPlayTrigger = now;
+            _walkRemaining = 0;
+            var state = ChoosePlayState(center, previousCursor, cursor, _playGestureHorizontalDelta);
+            ResetPlayGesture();
+            PlayState(state, TimeSpan.FromMilliseconds(850));
+        }
+    }
+
+    private static PetState ChoosePlayState(
+        Point petCenter,
+        Point previousCursor,
+        Point currentCursor,
+        double gestureHorizontalDelta)
+    {
+        if (Math.Abs(gestureHorizontalDelta) >= 2)
+        {
+            return gestureHorizontalDelta < 0 ? PetState.PlayLeft : PetState.Play;
+        }
+
+        var currentHorizontalDelta = currentCursor.X - previousCursor.X;
+        if (Math.Abs(currentHorizontalDelta) >= 1)
+        {
+            return currentHorizontalDelta < 0 ? PetState.PlayLeft : PetState.Play;
+        }
+
+        return currentCursor.X < petCenter.X ? PetState.PlayLeft : PetState.Play;
+    }
+
+    private bool IsCursorInPlayArea(Point cursor)
+    {
+        var localCursor = PointFromScreen(cursor);
+        var hitArea = _petAsset.Manifest.HitArea;
+        var hasHitArea = hitArea.Width > 0 && hitArea.Height > 0;
+        var scale = _settings.ActivePet().Scale;
+        var x = hasHitArea ? hitArea.X * scale : 0;
+        var y = hasHitArea ? hitArea.Y * scale : 0;
+        var width = hasHitArea ? hitArea.Width * scale : Width;
+        var height = hasHitArea ? hitArea.Height * scale : Height;
+        var padding = 14 * scale;
+
+        return localCursor.X >= x - padding &&
+               localCursor.X <= x + width + padding &&
+               localCursor.Y >= y - padding &&
+               localCursor.Y <= y + height + padding;
+    }
+
+    private InteractionProfile CurrentInteractionProfile() => _settings.ActivePet().InteractionLevel.ToLowerInvariant() switch
+    {
+        "low" => new InteractionProfile(900, 9, 7),
+        "high" => new InteractionProfile(450, 4, 3),
+        _ => new InteractionProfile(650, 6, 4)
+    };
+
+    private void ResetPlayGesture()
+    {
+        _playGestureStartedAt = DateTime.MinValue;
+        _playGestureHorizontalDelta = 0;
+        _playGestureTotalDelta = 0;
+    }
+
+    private void SampleCursorPosition()
+    {
+        var cursor = CursorTracker.GetScreenPosition();
+        if (double.IsNaN(cursor.X) || double.IsNaN(cursor.Y))
+        {
+            return;
+        }
+
+        _lastCursor = cursor;
+        _lastCursorSample = DateTime.UtcNow;
     }
 
     private void ChooseAutomaticState()
     {
         var choice = _random.Next(100);
-        if (choice < 45)
+        if (choice < 25)
         {
             PlayState(PetState.Idle);
-            _nextAutoDecision = DateTime.UtcNow + TimeSpan.FromSeconds(_random.Next(5, 12));
+            _nextAutoDecision = DateTime.UtcNow + TimeSpan.FromSeconds(_random.Next(3, 8));
         }
-        else if (choice < 75)
+        else if (choice < 85)
         {
             _walkDirection = _random.Next(2) == 0 ? -1 : 1;
-            _walkRemaining = _random.Next(80, 240);
+            _walkRemaining = _random.Next(160, 420) * _settings.ActivePet().Scale;
             PlayState(_walkDirection < 0 ? PetState.WalkLeft : PetState.WalkRight);
             _nextAutoDecision = DateTime.UtcNow + TimeSpan.FromSeconds(20);
         }
         else
         {
             PlayState(PetState.Sleep);
-            _nextAutoDecision = DateTime.UtcNow + TimeSpan.FromSeconds(_random.Next(20, 60));
+            _nextAutoDecision = DateTime.UtcNow + TimeSpan.FromMinutes(1);
         }
     }
 
@@ -402,7 +512,7 @@ public partial class MainWindow : Window
         }
 
         e.Effects = System.Windows.DragDropEffects.Move;
-        PlayState(PetState.Alert, TimeSpan.FromSeconds(3));
+        PlayState(PetState.Idle, TimeSpan.FromSeconds(1));
     }
 
     private void OnDragOver(object sender, System.Windows.DragEventArgs e)
@@ -507,23 +617,60 @@ public partial class MainWindow : Window
         _settingsStore.Save(_settings);
     }
 
-    private void OpenSettings()
+    private void OpenControlPanel()
     {
-        var window = new SettingsWindow(_settings) { Owner = this };
-        if (window.ShowDialog() != true)
+        if (_controlPanelWindow is { IsVisible: true })
         {
+            _controlPanelWindow.Activate();
             return;
         }
 
-        _settings = window.Settings;
-        Width = _petAsset.Manifest.Canvas.Width * _settings.Scale;
-        Height = _petAsset.Manifest.Canvas.Height * _settings.Scale;
+        _catalog = _catalogService.LoadCatalog();
+        _controlPanelWindow = new ControlPanelWindow(_settings, _catalog, _settings.ActivePetId, IsVisible, _isPaused)
+        {
+            Owner = this
+        };
+        _controlPanelWindow.ApplyRequested += (_, request) => ApplyControlPanelRequest(request);
+        _controlPanelWindow.ResetPositionRequested += (_, _) => ResetPosition();
+        _controlPanelWindow.PauseToggleRequested += (_, _) => TogglePaused();
+        _controlPanelWindow.Closed += (_, _) => _controlPanelWindow = null;
+        _controlPanelWindow.Show();
+    }
+
+    private void ApplyControlPanelRequest(ControlPanelApplyRequest request)
+    {
+        SavePosition();
+
+        _settings.ActivePetId = request.ActivePetId;
+        _settings.IsClickThrough = request.IsClickThrough;
+        _settings.IsFeedingEnabled = request.IsFeedingEnabled;
+        _settings.ConfirmBeforeFeeding = request.ConfirmBeforeFeeding;
+
+        var petSettings = _settings.PetFor(request.ActivePetId);
+        petSettings.Scale = request.Scale;
+        petSettings.MoveSpeed = request.MoveSpeed;
+        petSettings.InteractionLevel = request.InteractionLevel;
+        petSettings.Opacity = request.Opacity;
+
+        _catalog = _catalogService.LoadCatalog();
+        _petAsset = ResolveActivePet();
+        _fileFeedService = new FileFeedService(AppContext.BaseDirectory, _petAsset.RootDirectory);
+
+        ApplyPetWindowSize();
+        Opacity = petSettings.Opacity;
         ClampToWorkArea();
-        _settings.Left = Left;
-        _settings.Top = Top;
+        SavePosition();
         _settingsStore.Save(_settings);
         ClickThroughWindow.SetClickThrough(this, _settings.IsClickThrough);
-        PlayState(_state);
+        ResetPlayGesture();
+        PlayState(PetState.Idle);
+    }
+
+    private void ApplyPetWindowSize()
+    {
+        var scale = _settings.ActivePet().Scale;
+        Width = _petAsset.Manifest.Canvas.Width * scale;
+        Height = _petAsset.Manifest.Canvas.Height * scale;
     }
 
     private void ResetPosition()
@@ -543,6 +690,9 @@ public partial class MainWindow : Window
 
     private void SavePosition()
     {
+        var petSettings = _settings.ActivePet();
+        petSettings.Left = Left;
+        petSettings.Top = Top;
         _settings.Left = Left;
         _settings.Top = Top;
         _settingsStore.Save(_settings);
@@ -561,4 +711,6 @@ public partial class MainWindow : Window
         var dy = a.Y - b.Y;
         return Math.Sqrt(dx * dx + dy * dy);
     }
+    
+    private readonly record struct InteractionProfile(int CooldownMs, double TotalMotionThreshold, double HorizontalMotionThreshold);
 }
